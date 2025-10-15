@@ -84,7 +84,7 @@
     <section class="panel" style="grid-column: 1 / -1;">
       <h2>Dataset (whitespace‑indented)</h2>
       <textarea id="dataset"></textarea>
-      <p class="hint">Each deeper level should be indented with tabs or spaces. Leaf lines become <i>items</i>. Their immediate parents become <i>categories</i>.</p>
+      <p class="hint">Deepest‑indented lines are <em>items</em>. Every ancestor level is a <em>category</em>. So items belong to <strong>all</strong> ancestor categories.</p>
     </section>
   </main>
 
@@ -115,9 +115,9 @@
 \t\t\tHypoplastic left heart syndrome`;
 
   // ===== State =====
-  let leaves = [];           // {id,label,categoryId}
-  let categories = [];       // {id,label}
-  let groups = {};           // catId -> [leafIds]
+  let leaves = [];           // {id,label}
+  let categories = [];       // {id,label,node}
+  let groups = {};           // catId -> [leafIds] (descendants at deepest depth)
   let bank = [];             // [leafId]
   let placed = {};           // catId -> [leafId]
   let locked = new Set();    // Set<leafId>
@@ -163,17 +163,40 @@
     const items = lines.map(line=>{
       const m = /^([\t ]*)(.*)$/.exec(line);
       const indent = m[1]||''; const label=(m[2]||'').trim();
-      return { depth: countDepth(indent), node: { label, children: [] } };
+      return { depth: countDepth(indent), node: { label, children: [], _depth: 0, _parent: null, _leafId: null } };
     });
-    const root = { label: items[0]?.node.label || 'Root', children: [] };
+    const root = { label: items[0]?.node.label || 'Root', children: [], _depth: -1, _parent: null };
     const stack = [{ depth:-1, node: root }];
     for (const {depth,node} of items){
       while (stack.length && stack[stack.length-1].depth >= depth) stack.pop();
       const parent = stack[stack.length-1].node;
+      node._depth = depth; node._parent = parent;
       if (depth===0 && root.children.length===0) root.label = node.label; else parent.children.push(node);
       stack.push({depth,node});
     }
     return {root};
+  }
+
+  function walk(node, fn){ fn(node); (node.children||[]).forEach(ch=>walk(ch,fn)); }
+
+  function deepestDepth(root){
+    let max = 0;
+    walk(root, n => { if (n._depth>max) max=n._depth; });
+    return max;
+  }
+
+  function collectDescendantLeafIds(node, targetDepth, cache = new Map()){
+    if (cache.has(node)) return cache.get(node);
+    let out = [];
+    if (!node.children || node.children.length===0){
+      // Only count as leaf if it is at targetDepth
+      if (node._depth === targetDepth) out.push(node._leafId);
+      cache.set(node, out);
+      return out;
+    }
+    for (const ch of node.children){ out = out.concat(collectDescendantLeafIds(ch, targetDepth, cache)); }
+    cache.set(node, out);
+    return out;
   }
 
   function labelOf(id){ return (leaves.find(l=>l.id===id)||{}).label || id; }
@@ -251,10 +274,7 @@
 
   function updateCount(catId){
     const total = (groups[catId]||[]).length;
-    const correct = (placed[catId]||[]).filter(id=>{
-      const leaf = leaves.find(l=>l.id===id);
-      return leaf && leaf.categoryId===catId;
-    }).length;
+    const correct = (placed[catId]||[]).filter(id => (groups[catId]||[]).includes(id)).length;
     const el = document.getElementById(`count-${catId}`);
     if (el) el.textContent = `${correct} / ${total}`;
   }
@@ -300,11 +320,10 @@
   // ===== Buttons =====
   btnCheck.addEventListener('click', ()=>{
     const wrong = [];
-    // lock correct
+    // lock correct placements for each category independently
     for (const [catId, ids] of Object.entries(placed)){
       ids.forEach(id=>{
-        const leaf = leaves.find(l=>l.id===id);
-        if (leaf && leaf.categoryId===catId) locked.add(id); else wrong.push(id);
+        if ((groups[catId]||[]).includes(id)) locked.add(id); else wrong.push(id);
       });
     }
     // snap wrong back
@@ -327,26 +346,37 @@
   // ===== Init =====
   function initFromText(text){
     UID = 0; locked = new Set(); showAnswers = false; btnToggleAns.textContent = 'Show Answers';
+
+    // Parse into a tree with depth & parent links
     const { root } = parseIndented(text);
-    const categoriesMap = new Map();
-    leaves = []; groups = {}; placed = {}; bank = [];
 
-    (function walk(node, parent){
-      if (!node.children || node.children.length===0){
-        if (parent){
-          const catLabel = parent.label;
-          if (!categoriesMap.has(catLabel)) categoriesMap.set(catLabel, { id: slug(catLabel), label: catLabel });
-          const id = uid(node.label);
-          const catId = slug(catLabel);
-          leaves.push({ id, label: node.label, categoryId: catId });
-          groups[catId] = (groups[catId]||[]).concat(id);
-        }
-        return;
+    // Determine deepest indentation level (items live here)
+    const maxD = deepestDepth(root);
+
+    // Clear collections
+    leaves = []; groups = {}; placed = {}; bank = []; categories = [];
+
+    // Assign ids to deepest nodes (items)
+    walk(root, node => {
+      if (node._depth === maxD && (!node.children || node.children.length === 0)){
+        node._leafId = uid(node.label);
+        leaves.push({ id: node._leafId, label: node.label });
       }
-      node.children.forEach(ch=>walk(ch,node));
-    })(root, null);
+    });
 
-    categories = Array.from(categoriesMap.values());
+    // For every node above deepest level, treat as a category whose correct set is all descendant deepest leaves
+    walk(root, node => {
+      if (node._depth >= 0 && node._depth < maxD){
+        const catId = slug(node.label);
+        const descendantLeafIds = collectDescendantLeafIds(node, maxD);
+        if (descendantLeafIds.length > 0){
+          categories.push({ id: catId, label: node.label, node });
+          groups[catId] = descendantLeafIds.slice();
+        }
+      }
+    });
+
+    // Randomize bank of all items
     bank = shuffle(leaves.map(l=>l.id));
 
     renderBank();
