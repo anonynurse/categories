@@ -6,19 +6,13 @@
   <title>Drag-to-Category Study</title>
   <style>
     :root {
-      --bg: #f6f7fb;
-      --panel: #ffffff;
-      --ink: #0f172a;
-      --muted: #64748b;
-      --brand: #4f46e5;
-      --ok: #10b981;
-      --warn: #f59e0b;
-      --border: #e5e7eb;
+      --bg: #f6f7fb; --panel: #ffffff; --ink: #0f172a; --muted: #64748b;
+      --brand: #4f46e5; --ok: #10b981; --warn: #f59e0b; --border: #e5e7eb;
     }
     * { box-sizing: border-box; }
     body { margin:0; background: var(--bg); color: var(--ink);
-           font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
-    header { position: sticky; top:0; z-index: 10; background: rgba(255,255,255,0.85);
+           font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; }
+    header { position: sticky; top:0; z-index: 10; background: rgba(255,255,255,.85);
              backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px; }
     h1 { font-size: 20px; margin: 0; }
@@ -102,97 +96,230 @@
 </main>
 
 <script>
+// ----- Sample dataset -----
 const defaultText = `Congenital heart defects
-	Acyanotic
-		Increased pulmonary flow
-			Atrial Septal Defect
-			Ventricular Septal Defect (most common acyanotic)
-			Patent ductus arteriosus
-		Obstruction to blood flow from ventricles
-			Coarctation of aorta
-			Aortic stenosis
-			Pulmonic stenosis
-	Cyanotic
-		Decreased pulmonary blood flow
-			Tetralogy of fallot (most common cyanotic)
-				Pulmonic stenosis
-				Right ventricular hypertrophy
-				Overriding aorta
-				Ventricular septal defect
-			Tricuspid atresia
-		Mixed blood flow
-			Transposition of the great arteries
-			Total anomalous pulmonary venous return
-			Truncus arteriosus
-			Hypoplastic left heart syndrome`;
+\tAcyanotic
+\t\tIncreased pulmonary flow
+\t\t\tAtrial Septal Defect
+\t\t\tVentricular Septal Defect (most common acyanotic)
+\t\t\tPatent ductus arteriosus
+\t\tObstruction to blood flow from ventricles
+\t\t\tCoarctation of aorta
+\t\t\tAortic stenosis
+\t\t\tPulmonic stenosis
+\tCyanotic
+\t\tDecreased pulmonary blood flow
+\t\t\tTetralogy of fallot (most common cyanotic)
+\t\t\t\tPulmonic stenosis
+\t\t\t\tRight ventricular hypertrophy
+\t\t\t\tOverriding aorta
+\t\t\t\tVentricular septal defect
+\t\t\tTricuspid atresia
+\t\tMixed blood flow
+\t\t\tTransposition of the great arteries
+\t\t\tTotal anomalous pulmonary venous return
+\t\t\tTruncus arteriosus
+\t\t\tHypoplastic left heart syndrome`;
 
-let leaves=[],categories=[],groups={},bank=[],placed={},locked=new Set(),showAnswers=false,seed=1;
-const elDataset=document.getElementById('dataset'),elBank=document.getElementById('bank'),
-elCats=document.getElementById('cats'),btnCheck=document.getElementById('btnCheck'),
-btnUnlock=document.getElementById('btnUnlock'),btnReset=document.getElementById('btnReset'),
-btnToggleAns=document.getElementById('btnToggleAns');
-elDataset.value=defaultText;
+// ----- State -----
+let leaves=[], categories=[], groups={}, bank=[], placed={}, locked=new Set(), showAnswers=false, seed=1;
 
+// ----- Elements -----
+const elDataset=document.getElementById('dataset');
+const elBank=document.getElementById('bank');
+const elCats=document.getElementById('cats');
+const btnCheck=document.getElementById('btnCheck');
+const btnUnlock=document.getElementById('btnUnlock');
+const btnReset=document.getElementById('btnReset');
+const btnToggleAns=document.getElementById('btnToggleAns');
+
+elDataset.value = defaultText;
+
+// ----- Utils -----
 const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-let UID=0; const uid=l=>`${slug(l)}-${UID++}`;
+let UID=0; const uid=label=>`${slug(label)}-${UID++}`;
 function rng(){let x=seed%2147483647;return()=> (x=x*48271%2147483647)/2147483647;}
-function shuffle(a){const r=rng(),arr=a.slice();for(let i=arr.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
-function countDepth(indent){if(!indent)return 0;const t=(indent.match(/\\t/g)||[]).length;const s=indent.replace(/\\t/g,'').length;return t+Math.floor(s/2);}
+function shuffle(arr){const r=rng(),a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
+// Count depth: tabs = 1; 2 spaces = 1; treat NBSP as space
+function countDepth(indent){
+  if (!indent) return 0;
+  indent = String(indent).replace(/\u00A0/g,' ');
+  const tabs = (indent.match(/\t/g)||[]).length;
+  const spaces = indent.replace(/\t/g,'').length;
+  return tabs + Math.floor(spaces/2);
+}
+
+// Robust parser: tolerate NBSPs/odd whitespace; guard nulls
 function parseIndented(text){
- const lines=text.split(/\\r?\\n/).map(l=>l.replace(/\\s+$/,'')).filter(l=>l.trim().length>0);
- const items=lines.map(line=>{const m=/^([\\t ]*)(.*)$/.exec(line);const indent=m[1]||'';const label=(m[2]||'').trim();return{depth:countDepth(indent),node:{label,children:[]}}});
- const root={label:items[0]?.node.label||'Root',children:[]};const stack=[{depth:-1,node:root}];
- for(const {depth,node} of items){while(stack.length&&stack[stack.length-1].depth>=depth)stack.pop();
- const p=stack[stack.length-1].node;if(depth===0&&root.children.length===0)root.label=node.label;else p.children.push(node);stack.push({depth,node});}
- return{root};
-}
-function annotate(root){(function w(n,d=-1,p=null){n._depth=d;n._parent=p;(n.children||[]).forEach(ch=>w(ch,d+1,n));})(root);}
-function walk(n,fn){fn(n);(n.children||[]).forEach(ch=>walk(ch,fn));}
-function deepestDepth(root){let m=0;walk(root,n=>{if(n._depth>m)m=n._depth});return m;}
-function collectDescendantLeafIds(n,td){let out=[];if(!n.children||n.children.length===0){if(n._depth===td)out.push(n._leafId);return out;}for(const c of n.children)out=out.concat(collectDescendantLeafIds(c,td));return out;}
-function labelOf(id){return(leaves.find(l=>l.id===id)||{}).label||id;}
+  text = typeof text === 'string' ? text : String(text ?? '');
+  const rawLines = text.replace(/\r\n?/g, '\n').split('\n');
+  const lines = rawLines
+    .map(l => (typeof l === 'string' ? l : String(l ?? '')))
+    .map(l => l.replace(/\s+$/u,''))
+    .filter(l => l.trim().length > 0);
 
-function renderBank(){elBank.innerHTML='';bank.forEach(id=>{const d=document.createElement('div');d.className='chip';d.draggable=!locked.has(id);if(locked.has(id))d.classList.add('locked');d.textContent=(locked.has(id)?'✅ ':'')+labelOf(id);d.dataset.id=id;d.addEventListener('dragstart',onDragStart);elBank.appendChild(d);});}
+  const items = lines.map((line, idx) => {
+    const m = /^([\t \u00A0]*)(.*)$/u.exec(line);
+    if (!m) {
+      console.warn('Unmatched line (kept as depth 0):', idx, JSON.stringify(line));
+      return { depth: 0, node: { label: String(line).trim(), children: [] } };
+    }
+    const indent = m[1] || '';
+    const label  = (m[2] || '').trim();
+    return { depth: countDepth(indent), node: { label, children: [] } };
+  });
+
+  const root = { label: items[0]?.node.label || 'Root', children: [] };
+  const stack = [{ depth:-1, node: root }];
+  for (const { depth, node } of items){
+    while (stack.length && stack[stack.length-1].depth >= depth) stack.pop();
+    const parent = stack[stack.length-1].node;
+    if (depth===0 && root.children.length===0) root.label = node.label; else parent.children.push(node);
+    stack.push({ depth, node });
+  }
+  return { root };
+}
+
+// Annotate with depth/parent
+function annotate(root){
+  (function walk(n, d=-1, p=null){
+    n._depth=d; n._parent=p;
+    (n.children||[]).forEach(ch=>walk(ch, d+1, n));
+  })(root);
+}
+function walk(n, fn){ fn(n); (n.children||[]).forEach(ch=>walk(ch,fn)); }
+function deepestDepth(root){ let max=0; walk(root, n => { if (n._depth>max) max=n._depth; }); return max; }
+function collectDescendantLeafIds(n, targetDepth){
+  let out=[]; if (!n.children || n.children.length===0){ if (n._depth===targetDepth) out.push(n._leafId); return out; }
+  for (const ch of n.children) out = out.concat(collectDescendantLeafIds(ch, targetDepth));
+  return out;
+}
+function labelOf(id){ return (leaves.find(l=>l.id===id)||{}).label || id; }
+
+// ----- Render -----
+function renderBank(){
+  elBank.innerHTML=''; elBank.classList.remove('over');
+  bank.forEach(id=>{
+    const d=document.createElement('div'); d.className='chip';
+    d.draggable = !locked.has(id); if (locked.has(id)) d.classList.add('locked');
+    d.textContent = (locked.has(id)?'✅ ':'') + labelOf(id);
+    d.dataset.id = id; d.addEventListener('dragstart', onDragStart);
+    elBank.appendChild(d);
+  });
+}
 function renderCats(){
- elCats.innerHTML='';categories.forEach(cat=>{const card=document.createElement('div');card.className='cat-card';
- const head=document.createElement('div');head.className='cat-head';head.innerHTML=`<div>${cat.label}</div><div class=\"cat-count\" id=\"count-${cat.id}\"></div>`;
- const zone=document.createElement('div');zone.className='category';zone.dataset.catId=cat.id;
- zone.addEventListener('dragover',onZoneDragOver);zone.addEventListener('dragleave',onZoneDragLeave);zone.addEventListener('drop',onZoneDrop);
- (placed[cat.id]||[]).forEach(id=>zone.appendChild(makeChip(id)));
- if(showAnswers){const answers=groups[cat.id]||[];const miss=answers.filter(id=>!(placed[cat.id]||[]).includes(id));
- miss.forEach(id=>{const g=document.createElement('div');g.className='chip ghost';g.textContent=labelOf(id);zone.appendChild(g);});}
- const wrap=document.createElement('div');wrap.className='panel';wrap.style.border='none';wrap.style.padding='10px';wrap.appendChild(zone);
- card.appendChild(head);card.appendChild(wrap);elCats.appendChild(card);updateCount(cat.id);});
+  elCats.innerHTML='';
+  categories.forEach(cat=>{
+    const card=document.createElement('div'); card.className='cat-card';
+    const head=document.createElement('div'); head.className='cat-head';
+    head.innerHTML=`<div>${cat.label}</div><div class="cat-count" id="count-${cat.id}"></div>`;
+    const zone=document.createElement('div'); zone.className='category'; zone.dataset.catId=cat.id;
+    zone.addEventListener('dragover', onZoneDragOver); zone.addEventListener('dragleave', onZoneDragLeave); zone.addEventListener('drop', onZoneDrop);
+    (placed[cat.id]||[]).forEach(id=> zone.appendChild(makeChip(id)) );
+    if (showAnswers){
+      const expected = groups[cat.id] || [];
+      const missing = expected.filter(id => !(placed[cat.id]||[]).includes(id));
+      missing.forEach(id=>{ const g=document.createElement('div'); g.className='chip ghost'; g.textContent=labelOf(id); zone.appendChild(g); });
+    }
+    const wrap=document.createElement('div'); wrap.className='panel'; wrap.style.border='none'; wrap.style.padding='10px'; wrap.appendChild(zone);
+    card.appendChild(head); card.appendChild(wrap); elCats.appendChild(card);
+    updateCount(cat.id);
+  });
 }
-function makeChip(id){const d=document.createElement('div');d.className='chip';d.draggable=!locked.has(id);if(locked.has(id))d.classList.add('locked');d.textContent=(locked.has(id)?'✅ ':'')+labelOf(id);d.dataset.id=id;d.addEventListener('dragstart',onDragStart);return d;}
-function updateCount(cid){const t=(groups[cid]||[]).length;const c=(placed[cid]||[]).filter(id=>(groups[cid]||[]).includes(id)).length;const el=document.getElementById(`count-${cid}`);if(el)el.textContent=`${c} / ${t}`;}
+function makeChip(id){
+  const d=document.createElement('div'); d.className='chip'; d.draggable=!locked.has(id);
+  if (locked.has(id)) d.classList.add('locked');
+  d.textContent=(locked.has(id)?'✅ ':'') + labelOf(id);
+  d.dataset.id=id; d.addEventListener('dragstart', onDragStart);
+  return d;
+}
+function updateCount(catId){
+  const total=(groups[catId]||[]).length;
+  const correct=(placed[catId]||[]).filter(id => (groups[catId]||[]).includes(id)).length;
+  const el=document.getElementById(`count-${catId}`); if (el) el.textContent=`${correct} / ${total}`;
+}
 
-function onDragStart(e){e.dataTransfer.setData('text/plain',e.target.dataset.id);}
-function onZoneDragOver(e){e.preventDefault();e.currentTarget.classList.add('over');}
-function onZoneDragLeave(e){e.currentTarget.classList.remove('over');}
-function onZoneDrop(e){e.preventDefault();e.currentTarget.classList.remove('over');const id=e.dataTransfer.getData('text/plain');if(!id||locked.has(id))return;
- const cid=e.currentTarget.dataset.catId;bank=bank.filter(x=>x!==id);for(const k of Object.keys(placed))placed[k]=placed[k].filter(x=>x!==id);placed[cid]=(placed[cid]||[]).concat(id);renderBank();renderCats();}
-elBank.addEventListener('dragover',e=>{e.preventDefault();elBank.classList.add('over');});
-elBank.addEventListener('dragleave',()=>elBank.classList.remove('over'));
-elBank.addEventListener('drop',e=>{e.preventDefault();elBank.classList.remove('over');const id=e.dataTransfer.getData('text/plain');if(!id||locked.has(id))return;
- for(const k of Object.keys(placed))placed[k]=placed[k].filter(x=>x!==id);if(!bank.includes(id))bank.push(id);renderBank();renderCats();});
+// ----- DnD -----
+function onDragStart(e){ e.dataTransfer.setData('text/plain', e.target.dataset.id); e.dataTransfer.effectAllowed='move'; }
+function onZoneDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+function onZoneDragLeave(e){ e.currentTarget.classList.remove('over'); }
+function onZoneDrop(e){
+  e.preventDefault(); e.currentTarget.classList.remove('over');
+  const id = e.dataTransfer.getData('text/plain'); if (!id || locked.has(id)) return;
+  const catId = e.currentTarget.dataset.catId;
+  bank = bank.filter(x=>x!==id);
+  for (const k of Object.keys(placed)) placed[k] = placed[k].filter(x=>x!==id);
+  placed[catId] = (placed[catId]||[]).concat(id);
+  renderBank(); renderCats();
+}
+elBank.addEventListener('dragover', e=>{ e.preventDefault(); elBank.classList.add('over'); });
+elBank.addEventListener('dragleave', ()=> elBank.classList.remove('over'));
+elBank.addEventListener('drop', e=>{
+  e.preventDefault(); elBank.classList.remove('over');
+  const id = e.dataTransfer.getData('text/plain'); if (!id || locked.has(id)) return;
+  for (const k of Object.keys(placed)) placed[k] = placed[k].filter(x=>x!==id);
+  if (!bank.includes(id)) bank.push(id);
+  renderBank(); renderCats();
+});
 
-btnCheck.addEventListener('click',()=>{const wrong=[];for(const[cid,ids]of Object.entries(placed)){ids.forEach(id=>{if((groups[cid]||[]).includes(id))locked.add(id);else wrong.push(id);});}
- for(const id of wrong){for(const k of Object.keys(placed))placed[k]=placed[k].filter(x=>x!==id);if(!bank.includes(id))bank.push(id);}renderBank();renderCats();});
-btnUnlock.addEventListener('click',()=>{locked=new Set();renderBank();renderCats();});
-btnReset.addEventListener('click',()=>{seed++;initFromText(elDataset.value);});
-btnToggleAns.addEventListener('click',()=>{showAnswers=!showAnswers;btnToggleAns.textContent=showAnswers?'Hide Answers':'Show Answers';renderCats();});
-let t;elDataset.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>initFromText(elDataset.value),150);});
+// ----- Controls -----
+btnCheck.addEventListener('click', ()=>{
+  const wrong=[];
+  for (const [cid, ids] of Object.entries(placed)){
+    ids.forEach(id => { if ((groups[cid]||[]).includes(id)) locked.add(id); else wrong.push(id); });
+  }
+  for (const id of wrong){
+    for (const k of Object.keys(placed)) placed[k] = placed[k].filter(x=>x!==id);
+    if (!bank.includes(id)) bank.push(id);
+  }
+  renderBank(); renderCats();
+});
+btnUnlock.addEventListener('click', ()=>{ locked = new Set(); renderBank(); renderCats(); });
+btnReset.addEventListener('click', ()=>{ seed++; initFromText(elDataset.value); });
+btnToggleAns.addEventListener('click', ()=>{ showAnswers=!showAnswers; btnToggleAns.textContent=showAnswers?'Hide Answers':'Show Answers'; renderCats(); });
 
+// Live re-parse with debounce
+let t; elDataset.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(()=>initFromText(elDataset.value), 150); });
+
+// ----- Build dataset -> UI (deepest = items; all ancestors = categories) -----
 function initFromText(text){
- UID=0;locked=new Set();showAnswers=false;btnToggleAns.textContent='Show Answers';
- const {root}=parseIndented(text);annotate(root);const maxD=deepestDepth(root);
- leaves=[];groups={};placed={};bank=[];categories=[];
- walk(root,n=>{if(n._depth===maxD&&(!n.children||n.children.length===0)){n._leafId=uid(n.label);leaves.push({id:n._leafId,label:n.label});}});
- const seen=new Set();walk(root,n=>{if(n._depth>=0&&n._depth<maxD){const cid=slug(n.label);if(!seen.has(cid)){const ids=collectDescendantLeafIds(n,maxD);if(ids.length){categories.push({id:cid,label:n.label});groups[cid]=ids.slice();}seen.add(cid);}}});
- bank=shuffle(leaves.map(l=>l.id));renderBank();renderCats();
+  try {
+    UID=0; locked=new Set(); showAnswers=false; btnToggleAns.textContent='Show Answers';
+    const { root } = parseIndented(text);
+    annotate(root);
+    const maxD = deepestDepth(root);
+
+    leaves=[]; groups={}; placed={}; bank=[]; categories=[];
+    // Items are deepest leaf nodes
+    walk(root, n => {
+      if (n._depth===maxD && (!n.children || n.children.length===0)) {
+        n._leafId = uid(n.label);
+        leaves.push({ id:n._leafId, label:n.label });
+      }
+    });
+    // Every ancestor is a category containing all descendant deepest leaves
+    const seen=new Set();
+    walk(root, n => {
+      if (n._depth>=0 && n._depth<maxD) {
+        const cid = slug(n.label);
+        if (!seen.has(cid)) {
+          const ids = collectDescendantLeafIds(n, maxD);
+          if (ids.length) { categories.push({ id: cid, label: n.label }); groups[cid] = ids.slice(); }
+          seen.add(cid);
+        }
+      }
+    });
+
+    bank = shuffle(leaves.map(l=>l.id));
+    renderBank(); renderCats();
+  } catch (err) {
+    console.error('initFromText failed:', err);
+    alert('Parse error. Check the console for details.');
+  }
 }
+
+// Kick off
 initFromText(defaultText);
 </script>
 </body>
