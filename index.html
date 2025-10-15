@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Drag‑to‑Category Study</title>
+  <title>Drag-to-Category Study</title>
   <style>
     :root {
       --bg: #f6f7fb;
@@ -16,437 +16,184 @@
       --border: #e5e7eb;
     }
     * { box-sizing: border-box; }
-    body { margin:0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
-    header { position: sticky; top:0; z-index: 10; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
+    body { margin:0; background: var(--bg); color: var(--ink);
+           font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    header { position: sticky; top:0; z-index: 10; background: rgba(255,255,255,0.85);
+             backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 12px 16px; }
     h1 { font-size: 20px; margin: 0; }
     .controls { display: flex; gap: 8px; margin-left: auto; }
-    button { border: 0; padding: 8px 12px; border-radius: 10px; color: white; background: var(--ink); cursor: pointer; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+    button { border: 0; padding: 8px 12px; border-radius: 10px; color: white;
+             background: var(--ink); cursor: pointer; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
     button:hover { filter: brightness(0.95); }
     .btn-primary { background: var(--brand); }
-    .btn-ok { background: var(--ok); }
     .btn-warn { background: var(--warn); }
 
-    main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid;
+           grid-template-columns: 1fr; gap: 16px; }
     @media (min-width: 900px){ main { grid-template-columns: 2fr 3fr; } }
 
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+    .panel { background: var(--panel); border: 1px solid var(--border);
+             border-radius: 14px; padding: 12px; }
     .panel h2 { margin: 0 0 8px; font-size: 18px; }
 
-    .bank, .category { min-height: 96px; border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 10px; }
-    .bank.over, .category.over { outline: 3px solid #c7d2fe; border-color: var(--brand); background: #eef2ff; }
+    .bank, .category { min-height: 96px; border: 1px solid var(--border);
+                       border-radius: 12px; background: #fff; padding: 10px; }
+    .bank.over, .category.over { outline: 3px solid #c7d2fe; border-color: var(--brand);
+                                 background: #eef2ff; }
 
-    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; margin: 4px; font-size: 14px; cursor: grab; user-select: none; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+    .chip { display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px;
+            background: #fff; margin: 4px; font-size: 14px; cursor: grab;
+            user-select: none; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
     .chip.locked { opacity: .75; cursor: default; }
     .chip.ghost { border-style: dashed; color: var(--muted); background: #fafafa; }
 
     .cats { display: grid; grid-template-columns: 1fr; gap: 12px; }
     @media (min-width: 600px){ .cats { grid-template-columns: 1fr 1fr; } }
 
-    .cat-card { background:#fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .cat-head { display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600; }
+    .cat-card { background:#fff; border: 1px solid var(--border);
+                border-radius: 14px; overflow: hidden; }
+    .cat-head { display:flex; align-items:center; justify-content:space-between;
+                padding: 8px 10px; border-bottom: 1px solid var(--border);
+                font-weight: 600; }
     .cat-count { font-weight: 500; font-size: 12px; color: var(--muted); }
 
     .row { display: flex; gap: 12px; align-items: center; }
     .spacer { flex: 1; }
 
-    textarea { width: 100%; height: 180px; border-radius: 12px; border: 1px solid var(--border); padding: 10px; resize: vertical; }
+    textarea { width: 100%; height: 180px; border-radius: 12px;
+               border: 1px solid var(--border); padding: 10px; resize: vertical; }
     .hint { color: var(--muted); font-size: 13px; }
     .small { color: var(--muted); font-size: 14px; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap row">
-      <h1>Drag‑to‑Category Study</h1>
-      <div class="spacer"></div>
-      <div class="controls">
-        <button class="btn-primary" id="btnCheck">Check</button>
-        <button id="btnToggleAns">Show Answers</button>
-        <button class="btn-warn" id="btnUnlock">Unlock All</button>
-        <button id="btnReset">Reset & Shuffle</button>
-      </div>
+<header>
+  <div class="wrap row">
+    <h1>Drag-to-Category Study</h1>
+    <div class="spacer"></div>
+    <div class="controls">
+      <button class="btn-primary" id="btnCheck">Check</button>
+      <button id="btnToggleAns">Show Answers</button>
+      <button class="btn-warn" id="btnUnlock">Unlock All</button>
+      <button id="btnReset">Reset & Shuffle</button>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main>
-    <section class="panel">
-      <h2>Items</h2>
-      <div id="bank" class="bank" aria-label="Item bank"></div>
-      <p class="small">Drag items into the correct category boxes. Click <b>Check</b> to lock correct items; wrong ones return here.</p>
-    </section>
+<main>
+  <section class="panel">
+    <h2>Items</h2>
+    <div id="bank" class="bank" aria-label="Item bank"></div>
+    <p class="small">Drag items into the correct category boxes. Click <b>Check</b> to lock correct items; wrong ones return here.</p>
+  </section>
 
-    <section class="panel">
-      <h2>Categories</h2>
-      <div id="cats" class="cats"></div>
-    </section>
+  <section class="panel">
+    <h2>Categories</h2>
+    <div id="cats" class="cats"></div>
+  </section>
 
-    <section class="panel" style="grid-column: 1 / -1;">
-      <h2>Dataset (whitespace‑indented)</h2>
-      <textarea id="dataset"></textarea>
-      <p class="hint">Each deeper level should be indented with tabs or spaces. Leaf lines become <i>items</i>. Their immediate parents become <i>categories</i>.</p>
-    </section>
-  </main>
+  <section class="panel" style="grid-column: 1 / -1;">
+    <h2>Dataset (whitespace-indented)</h2>
+    <textarea id="dataset"></textarea>
+    <p class="hint">Deepest-indented lines are <em>items</em>. Every ancestor level is a <em>category</em>.</p>
+  </section>
+</main>
 
-  <script>
-  // ===== Sample Data =====
-  const defaultText = `Congenital heart defects
-\tAcyanotic
-\t\tIncreased pulmonary flow
-\t\t\tAtrial Septal Defect
-\t\t\tVentricular Septal Defect (most common acyanotic)
-\t\t\tPatent ductus arteriosus
-\t\tObstruction to blood flow from ventricles
-\t\t\tCoarctation of aorta
-\t\t\tAortic stenosis
-\t\t\tPulmonic stenosis
-\tCyanotic
-\t\tDecreased pulmonary blood flow
-\t\t\tTetralogy of fallot (most common cyanotic)
-\t\t\t\tPulmonic stenosis
-\t\t\t\tRight ventricular hypertrophy
-\t\t\t\tOverriding aorta
-\t\t\t\tVentricular septal defect
-\t\t\tTricuspid atresia
-\t\tMixed blood flow
-\t\t\tTransposition of the great arteries
-\t\t\tTotal anomalous pulmonary venous return
-\t\t\tTruncus arteriosus
-\t\t\tHypoplastic left heart syndrome`;
+<script>
+const defaultText = `Congenital heart defects
+	Acyanotic
+		Increased pulmonary flow
+			Atrial Septal Defect
+			Ventricular Septal Defect (most common acyanotic)
+			Patent ductus arteriosus
+		Obstruction to blood flow from ventricles
+			Coarctation of aorta
+			Aortic stenosis
+			Pulmonic stenosis
+	Cyanotic
+		Decreased pulmonary blood flow
+			Tetralogy of fallot (most common cyanotic)
+				Pulmonic stenosis
+				Right ventricular hypertrophy
+				Overriding aorta
+				Ventricular septal defect
+			Tricuspid atresia
+		Mixed blood flow
+			Transposition of the great arteries
+			Total anomalous pulmonary venous return
+			Truncus arteriosus
+			Hypoplastic left heart syndrome`;
 
-  // ===== State =====
-  let leaves = [];           // {id,label,categoryId}
-  let categories = [];       // {id,label}
-  let groups = {};           // catId -> [leafIds]
-  let bank = [];             // [leafId]
-  let placed = {};           // catId -> [leafId]
-  let locked = new Set();    // Set<leafId>
-  let showAnswers = false;
-  let seed = 1;
+let leaves=[],categories=[],groups={},bank=[],placed={},locked=new Set(),showAnswers=false,seed=1;
+const elDataset=document.getElementById('dataset'),elBank=document.getElementById('bank'),
+elCats=document.getElementById('cats'),btnCheck=document.getElementById('btnCheck'),
+btnUnlock=document.getElementById('btnUnlock'),btnReset=document.getElementById('btnReset'),
+btnToggleAns=document.getElementById('btnToggleAns');
+elDataset.value=defaultText;
 
-  // ===== Elements =====
-  const elDataset = document.getElementById('dataset');
-  const elBank = document.getElementById('bank');
-  const elCats = document.getElementById('cats');
-  const btnCheck = document.getElementById('btnCheck');
-  const btnUnlock = document.getElementById('btnUnlock');
-  const btnReset = document.getElementById('btnReset');
-  const btnToggleAns = document.getElementById('btnToggleAns');
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+let UID=0; const uid=l=>`${slug(l)}-${UID++}`;
+function rng(){let x=seed%2147483647;return()=> (x=x*48271%2147483647)/2147483647;}
+function shuffle(a){const r=rng(),arr=a.slice();for(let i=arr.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+function countDepth(indent){if(!indent)return 0;const t=(indent.match(/\\t/g)||[]).length;const s=indent.replace(/\\t/g,'').length;return t+Math.floor(s/2);}
 
-  elDataset.value = defaultText;
+function parseIndented(text){
+ const lines=text.split(/\\r?\\n/).map(l=>l.replace(/\\s+$/,'')).filter(l=>l.trim().length>0);
+ const items=lines.map(line=>{const m=/^([\\t ]*)(.*)$/.exec(line);const indent=m[1]||'';const label=(m[2]||'').trim();return{depth:countDepth(indent),node:{label,children:[]}}});
+ const root={label:items[0]?.node.label||'Root',children:[]};const stack=[{depth:-1,node:root}];
+ for(const {depth,node} of items){while(stack.length&&stack[stack.length-1].depth>=depth)stack.pop();
+ const p=stack[stack.length-1].node;if(depth===0&&root.children.length===0)root.label=node.label;else p.children.push(node);stack.push({depth,node});}
+ return{root};
+}
+function annotate(root){(function w(n,d=-1,p=null){n._depth=d;n._parent=p;(n.children||[]).forEach(ch=>w(ch,d+1,n));})(root);}
+function walk(n,fn){fn(n);(n.children||[]).forEach(ch=>walk(ch,fn));}
+function deepestDepth(root){let m=0;walk(root,n=>{if(n._depth>m)m=n._depth});return m;}
+function collectDescendantLeafIds(n,td){let out=[];if(!n.children||n.children.length===0){if(n._depth===td)out.push(n._leafId);return out;}for(const c of n.children)out=out.concat(collectDescendantLeafIds(c,td));return out;}
+function labelOf(id){return(leaves.find(l=>l.id===id)||{}).label||id;}
 
-  // ===== Utils =====
-  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-  let UID = 0;
-  const uid = label => `${slug(label)}-${UID++}`;
+function renderBank(){elBank.innerHTML='';bank.forEach(id=>{const d=document.createElement('div');d.className='chip';d.draggable=!locked.has(id);if(locked.has(id))d.classList.add('locked');d.textContent=(locked.has(id)?'✅ ':'')+labelOf(id);d.dataset.id=id;d.addEventListener('dragstart',onDragStart);elBank.appendChild(d);});}
+function renderCats(){
+ elCats.innerHTML='';categories.forEach(cat=>{const card=document.createElement('div');card.className='cat-card';
+ const head=document.createElement('div');head.className='cat-head';head.innerHTML=`<div>${cat.label}</div><div class=\"cat-count\" id=\"count-${cat.id}\"></div>`;
+ const zone=document.createElement('div');zone.className='category';zone.dataset.catId=cat.id;
+ zone.addEventListener('dragover',onZoneDragOver);zone.addEventListener('dragleave',onZoneDragLeave);zone.addEventListener('drop',onZoneDrop);
+ (placed[cat.id]||[]).forEach(id=>zone.appendChild(makeChip(id)));
+ if(showAnswers){const answers=groups[cat.id]||[];const miss=answers.filter(id=>!(placed[cat.id]||[]).includes(id));
+ miss.forEach(id=>{const g=document.createElement('div');g.className='chip ghost';g.textContent=labelOf(id);zone.appendChild(g);});}
+ const wrap=document.createElement('div');wrap.className='panel';wrap.style.border='none';wrap.style.padding='10px';wrap.appendChild(zone);
+ card.appendChild(head);card.appendChild(wrap);elCats.appendChild(card);updateCount(cat.id);});
+}
+function makeChip(id){const d=document.createElement('div');d.className='chip';d.draggable=!locked.has(id);if(locked.has(id))d.classList.add('locked');d.textContent=(locked.has(id)?'✅ ':'')+labelOf(id);d.dataset.id=id;d.addEventListener('dragstart',onDragStart);return d;}
+function updateCount(cid){const t=(groups[cid]||[]).length;const c=(placed[cid]||[]).filter(id=>(groups[cid]||[]).includes(id)).length;const el=document.getElementById(`count-${cid}`);if(el)el.textContent=`${c} / ${t}`;}
 
-  function rng() { // simple LCG based on seed
-    let x = seed % 2147483647;
-    return () => (x = x * 48271 % 2147483647) / 2147483647;
-  }
-  function shuffle(arr) {
-    const r = rng();
-    const a = arr.slice();
-    for (let i=a.length-1;i>0;i--) { const j = Math.floor(r()* (i+1)); [a[i],a[j]]=[a[j],a[i]]; }
-    return a;
-  }
+function onDragStart(e){e.dataTransfer.setData('text/plain',e.target.dataset.id);}
+function onZoneDragOver(e){e.preventDefault();e.currentTarget.classList.add('over');}
+function onZoneDragLeave(e){e.currentTarget.classList.remove('over');}
+function onZoneDrop(e){e.preventDefault();e.currentTarget.classList.remove('over');const id=e.dataTransfer.getData('text/plain');if(!id||locked.has(id))return;
+ const cid=e.currentTarget.dataset.catId;bank=bank.filter(x=>x!==id);for(const k of Object.keys(placed))placed[k]=placed[k].filter(x=>x!==id);placed[cid]=(placed[cid]||[]).concat(id);renderBank();renderCats();}
+elBank.addEventListener('dragover',e=>{e.preventDefault();elBank.classList.add('over');});
+elBank.addEventListener('dragleave',()=>elBank.classList.remove('over'));
+elBank.addEventListener('drop',e=>{e.preventDefault();elBank.classList.remove('over');const id=e.dataTransfer.getData('text/plain');if(!id||locked.has(id))return;
+ for(const k of Object.keys(placed))placed[k]=placed[k].filter(x=>x!==id);if(!bank.includes(id))bank.push(id);renderBank();renderCats();});
 
-  function countDepth(indent) {
-    if (!indent) return 0;
-    const tabs = (indent.match(/\t/g)||[]).length;
-    const spaces = indent.replace(/\t/g,'').length;
-    return tabs + Math.floor(spaces/2); // 2 spaces == 1 level
-  }
+btnCheck.addEventListener('click',()=>{const wrong=[];for(const[cid,ids]of Object.entries(placed)){ids.forEach(id=>{if((groups[cid]||[]).includes(id))locked.add(id);else wrong.push(id);});}
+ for(const id of wrong){for(const k of Object.keys(placed))placed[k]=placed[k].filter(x=>x!==id);if(!bank.includes(id))bank.push(id);}renderBank();renderCats();});
+btnUnlock.addEventListener('click',()=>{locked=new Set();renderBank();renderCats();});
+btnReset.addEventListener('click',()=>{seed++;initFromText(elDataset.value);});
+btnToggleAns.addEventListener('click',()=>{showAnswers=!showAnswers;btnToggleAns.textContent=showAnswers?'Hide Answers':'Show Answers';renderCats();});
+let t;elDataset.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>initFromText(elDataset.value),150);});
 
-  function parseIndented(text){
-    const lines = text.split(/\r?\n/).map(l=>l.replace(/\s+$/,'')).filter(l=>l.trim().length>0);
-    const items = lines.map(line=>{
-      const m = /^([\t ]*)(.*)$/.exec(line);
-      const indent = m[1]||''; const label=(m[2]||'').trim();
-      return { depth: countDepth(indent), node: { label, children: [] } };
-    });
-    const root = { label: items[0]?.node.label || 'Root', children: [] };
-    const stack = [{ depth:-1, node: root }];
-    for (const {depth,node} of items){
-      while (stack.length && stack[stack.length-1].depth >= depth) stack.pop();
-      const parent = stack[stack.length-1].node;
-      if (depth===0 && root.children.length===0) root.label = node.label; else parent.children.push(node);
-      stack.push({depth,node});
-    }
-    return {root};
-  }
-
-  function labelOf(id){ return (leaves.find(l=>l.id===id)||{}).label || id; }
-
-  // ===== Render =====
-  function renderBank(){
-    elBank.innerHTML = '';
-    elBank.classList.remove('over');
-    bank.forEach(id=>{
-      const div = document.createElement('div');
-      div.className = 'chip';
-      div.draggable = !locked.has(id);
-      if (locked.has(id)) div.classList.add('locked');
-      div.textContent = (locked.has(id)?'✅ ':'') + labelOf(id);
-      div.dataset.id = id;
-      div.addEventListener('dragstart', onDragStart);
-      elBank.appendChild(div);
-    });
-  }
-
-  function renderCats(){
-    elCats.innerHTML = '';
-    categories.forEach(cat=>{
-      const card = document.createElement('div');
-      card.className = 'cat-card';
-      const head = document.createElement('div');
-      head.className = 'cat-head';
-      head.innerHTML = `<div>${cat.label}</div><div class="cat-count" id="count-${cat.id}"></div>`;
-      const zone = document.createElement('div');
-      zone.className = 'category';
-      zone.dataset.catId = cat.id;
-      zone.addEventListener('dragover', onZoneDragOver);
-      zone.addEventListener('dragleave', onZoneDragLeave);
-      zone.addEventListener('drop', onZoneDrop);
-
-      // placed chips
-      (placed[cat.id]||[]).forEach(id=> zone.appendChild(makeChip(id)) );
-
-      // show missing as ghosts
-      if (showAnswers){
-        const answers = groups[cat.id] || [];
-        const missing = answers.filter(id => !(placed[cat.id]||[]).includes(id));
-        missing.forEach(id=>{
-          const ghost = document.createElement('div');
-          ghost.className = 'chip ghost';
-          ghost.textContent = labelOf(id);
-          zone.appendChild(ghost);
-        });
-      }
-
-      const wrap = document.createElement('div');
-      wrap.className = 'panel';
-      wrap.style.border = 'none';
-      wrap.style.padding = '10px';
-      wrap.appendChild(zone);
-
-      card.appendChild(head);
-      card.appendChild(wrap);
-      elCats.appendChild(card);
-
-      updateCount(cat.id);
-    });
-  }
-
-  function makeChip(id){
-    const div = document.createElement('div');
-    div.className = 'chip';
-    div.draggable = !locked.has(id);
-    if (locked.has(id)) div.classList.add('locked');
-    div.textContent = (locked.has(id)?'✅ ':'') + labelOf(id);
-    div.dataset.id = id;
-    div.addEventListener('dragstart', onDragStart);
-    return div;
-  }
-
-  function updateCount(catId){
-    const total = (groups[catId]||[]).length;
-    const correct = (placed[catId]||[]).filter(id=>{
-      const leaf = leaves.find(l=>l.id===id);
-      return leaf && leaf.categoryId===catId;
-    }).length;
-    const el = document.getElementById(`count-${catId}`);
-    if (el) el.textContent = `${correct} / ${total}`;
-  }
-
-  // ===== Drag & Drop Handlers =====
-  function onDragStart(e){
-    e.dataTransfer.setData('text/plain', e.target.dataset.id);
-    e.dataTransfer.effectAllowed = 'move';
-  }
-
-  function onZoneDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
-  function onZoneDragLeave(e){ e.currentTarget.classList.remove('over'); }
-  function onZoneDrop(e){
-    e.preventDefault();
-    e.currentTarget.classList.remove('over');
-    const id = e.dataTransfer.getData('text/plain');
-    if (!id || locked.has(id)) return;
-    const catId = e.currentTarget.dataset.catId;
-    // remove from bank
-    bank = bank.filter(x=>x!==id);
-    // remove from other categories
-    for (const k of Object.keys(placed)) placed[k] = placed[k].filter(x=>x!==id);
-    // add here
-    placed[catId] = (placed[catId]||[]).concat(id);
-    renderBank();
-    renderCats();
-  }
-
-  // allow dropping back to bank
-  elBank.addEventListener('dragover', e=>{ e.preventDefault(); elBank.classList.add('over'); });
-  elBank.addEventListener('dragleave', ()=> elBank.classList.remove('over'));
-  elBank.addEventListener('drop', e=>{
-    e.preventDefault(); elBank.classList.remove('over');
-    const id = e.dataTransfer.getData('text/plain');
-    if (!id || locked.has(id)) return;
-    // remove from all categories
-    for (const k of Object.keys(placed)) placed[k] = placed[k].filter(x=>x!==id);
-    if (!bank.includes(id)) bank.push(id);
-    renderBank();
-    renderCats();
-  });
-
-  // ===== Buttons =====
-  btnCheck.addEventListener('click', ()=>{
-    const wrong = [];
-    // lock correct
-    for (const [catId, ids] of Object.entries(placed)){
-      ids.forEach(id=>{
-        const leaf = leaves.find(l=>l.id===id);
-        if (leaf && leaf.categoryId===catId) locked.add(id); else wrong.push(id);
-      });
-    }
-    // snap wrong back
-    for (const id of wrong){
-      for (const k of Object.keys(placed)) placed[k] = placed[k].filter(x=>x!==id);
-      if (!bank.includes(id)) bank.push(id);
-    }
-    renderBank();
-    renderCats();
-  });
-
-  btnUnlock.addEventListener('click', ()=>{ locked = new Set(); renderBank(); renderCats(); });
-  btnReset.addEventListener('click', ()=>{ seed++; initFromText(elDataset.value); });
-  btnToggleAns.addEventListener('click', ()=>{ showAnswers = !showAnswers; btnToggleAns.textContent = showAnswers? 'Hide Answers':'Show Answers'; renderCats(); });
-
-  // Re-parse on dataset change (debounced)
-  let t;
-  elDataset.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(()=>initFromText(elDataset.value), 150); });
-
-  // ===== Init =====
-  function initFromText(text){
-    UID = 0; locked = new Set(); showAnswers = false; btnToggleAns.textContent = 'Show Answers';
-    const { root } = parseIndented(text);
-    const categoriesMap = new Map();
-    leaves = []; groups = {}; placed = {}; bank = [];
-
-    (function walk(node, parent){
-      if (!node.children || node.children.length===0){
-        if (parent){
-          const catLabel = parent.label;
-          if (!categoriesMap.has(catLabel)) categoriesMap.set(catLabel, { id: slug(catLabel), label: catLabel });
-          const id = uid(node.label);
-          const catId = slug(catLabel);
-          leaves.push({ id, label: node.label, categoryId: catId });
-          groups[catId] = (groups[catId]||[]).concat(id);
-        }
-        return;
-      }
-      node.children.forEach(ch=>walk(ch,node));
-    })(root, null);
-
-    categories = Array.from(categoriesMap.values());
-    bank = shuffle(leaves.map(l=>l.id));
-
-    renderBank();
-    renderCats();
-  }
-
-  initFromText(defaultText);
-  </script>
-  <script>
-  // === Hierarchical override: deepest-indented lines are ITEMS; all ancestors are CATEGORIES ===
-  (function(){
-    // Utilities that shadow earlier ones
-    function walk(node, fn){ fn(node); (node.children||[]).forEach(ch=>walk(ch,fn)); }
-    function deepestDepth(root){ let max = 0; walk(root, n => { if (n._depth>max) max=n._depth; }); return max; }
-    function collectDescendantLeafIds(node, targetDepth, cache = new Map()){
-      if (cache.has(node)) return cache.get(node);
-      let out = [];
-      if (!node.children || node.children.length===0){ if (node._depth === targetDepth) out.push(node._leafId); cache.set(node, out); return out; }
-      for (const ch of node.children){ out = out.concat(collectDescendantLeafIds(ch, targetDepth, cache)); }
-      cache.set(node, out); return out;
-    }
-    const _oldParse = parseIndented;
-    // Wrap the original to also stamp _depth and _parent
-    function parseIndentedPlus(text){
-      const { root } = _oldParse(text);
-      (function annotate(node, depth=-1, parent=null){
-        node._depth = depth; node._parent = parent; (node.children||[]).forEach(ch=>annotate(ch, depth+1, node));
-      })(root);
-      return { root };
-    }
-
-    // Override updateCount to use groups membership (many-to-many)
-    window.updateCount = function(catId){
-      const total = (groups[catId]||[]).length;
-      const correct = (placed[catId]||[]).filter(id => (groups[catId]||[]).includes(id)).length;
-      const el = document.getElementById(`count-${catId}`);
-      if (el) el.textContent = `${correct} / ${total}`;
-    };
-
-    // Override initFromText with hierarchical logic
-    window.initFromText = function(text){
-      UID = 0; locked = new Set(); showAnswers = false; btnToggleAns.textContent = 'Show Answers';
-      const { root } = parseIndentedPlus(text);
-      const maxD = deepestDepth(root);
-      leaves = []; groups = {}; placed = {}; bank = []; categories = [];
-
-      // Assign ids to deepest nodes (items)
-      walk(root, node => {
-        if (node._depth === maxD && (!node.children || node.children.length === 0)){
-          node._leafId = uid(node.label);
-          leaves.push({ id: node._leafId, label: node.label });
-        }
-      });
-
-      // Every ancestor level becomes a category with all descendant deepest leaves
-      const seen = new Set();
-      walk(root, node => {
-        if (node._depth >= 0 && node._depth < maxD){
-          const catId = slug(node.label);
-          if (!seen.has(catId)){
-            const ids = collectDescendantLeafIds(node, maxD);
-            if (ids.length){
-              categories.push({ id: catId, label: node.label });
-              groups[catId] = ids.slice();
-              seen.add(catId);
-            }
-          }
-        }
-      });
-
-      bank = (function(){
-        const ids = leaves.map(l=>l.id);
-        const r = (function(){ let x = seed % 2147483647; return () => (x = x * 48271 % 2147483647) / 2147483647; })();
-        for (let i=ids.length-1;i>0;i--){ const j = Math.floor(r()*(i+1)); [ids[i],ids[j]]=[ids[j],ids[i]]; }
-        return ids;
-      })();
-
-      renderBank();
-      renderCats();
-    };
-
-    // Replace prior Check handler with category‑aware one
-    (function replaceCheckHandler(){
-      const fresh = btnCheck.cloneNode(true);
-      btnCheck.parentNode.replaceChild(fresh, btnCheck);
-      fresh.addEventListener('click', ()=>{
-        const wrong = [];
-        for (const [catId, ids] of Object.entries(placed)){
-          ids.forEach(id=>{ if ((groups[catId]||[]).includes(id)) locked.add(id); else wrong.push(id); });
-        }
-        for (const id of wrong){ for (const k of Object.keys(placed)) placed[k] = placed[k].filter(x=>x!==id); if (!bank.includes(id)) bank.push(id); }
-        renderBank(); renderCats();
-      });
-      // expose back for potential future use
-      window.btnCheck = fresh;
-    })();
-
-    // Re-run with current textarea value
-    initFromText(elDataset.value);
-  })();
-  </script>
+function initFromText(text){
+ UID=0;locked=new Set();showAnswers=false;btnToggleAns.textContent='Show Answers';
+ const {root}=parseIndented(text);annotate(root);const maxD=deepestDepth(root);
+ leaves=[];groups={};placed={};bank=[];categories=[];
+ walk(root,n=>{if(n._depth===maxD&&(!n.children||n.children.length===0)){n._leafId=uid(n.label);leaves.push({id:n._leafId,label:n.label});}});
+ const seen=new Set();walk(root,n=>{if(n._depth>=0&&n._depth<maxD){const cid=slug(n.label);if(!seen.has(cid)){const ids=collectDescendantLeafIds(n,maxD);if(ids.length){categories.push({id:cid,label:n.label});groups[cid]=ids.slice();}seen.add(cid);}}});
+ bank=shuffle(leaves.map(l=>l.id));renderBank();renderCats();
+}
+initFromText(defaultText);
+</script>
 </body>
 </html>
